@@ -52,6 +52,36 @@ export {
   getEmbeddingDimensions,
 } from './embeddings/index.js';
 
+// Config (agent.yaml)
+export {
+  AgentConfigSchema,
+  parseAgentConfig,
+  loadAgentConfig,
+  toAgentIdentity,
+  ConfigError,
+  type AgentConfig,
+  type AgentIdentity,
+} from './config/agent-config.js';
+
+// Persona / prompt system
+export {
+  buildMicroPrompt,
+  baseIdentity,
+  formatCompactKnowledge,
+  isKnowledgeInContext,
+  type PromptContext,
+  type WorkingSetItem,
+  type OfferedEntry,
+} from './prompts/micro-prompts.js';
+
+// Knowledge folder loading
+export {
+  loadKnowledgeFolder,
+  parseMarkdownKnowledge,
+  parseCatalogKnowledge,
+  KnowledgeError,
+} from './knowledge/loader.js';
+
 // Entity resolution + ASR correction
 export {
   buildEntityIndex,
