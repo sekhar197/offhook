@@ -126,5 +126,38 @@ export {
 } from './voice/pronunciation.js';
 export { createNaturalizer } from './voice/text-naturalize.js';
 
+// Tools
+export {
+  ToolRegistry,
+  type ToolDefinition,
+  type ToolContext,
+  type ToolResultPayload,
+  type ToolParameters,
+} from './tools/registry.js';
+export {
+  BUILTIN_TOOLS,
+  answerFromKnowledge,
+  takeMessage,
+  sendSummary,
+  transferToHuman,
+  endCall,
+} from './tools/builtins.js';
+export {
+  checkCallerSafe,
+  assertCallerSafe,
+  BANNED_SUBSTRINGS,
+  MAX_MESSAGE_CHARS,
+} from './tools/caller-safe.js';
+
+// Action executor
+export {
+  executeAction,
+  classifyError,
+  isRetryable,
+  type ActionRequest,
+  type ActionResult,
+  type ActionErrorReason,
+} from './actions/executor.js';
+
 // Tracing
 export { traceLog, type TraceLevel } from './trace.js';
