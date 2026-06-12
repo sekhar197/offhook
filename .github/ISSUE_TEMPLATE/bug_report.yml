@@ -1,0 +1,50 @@
+name: Bug report
+description: Something broke — a call failed, the agent went silent, setup didn't work
+labels: [bug]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Exact steps, starting from a fresh clone if possible.
+      placeholder: |
+        1. docker compose up
+        2. Open the browser demo
+        3. Say "..."
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Mode
+      options:
+        - Browser demo
+        - Phone / SIP
+        - Single-key (OpenAI only)
+        - Multi-vendor (Deepgram + Cartesia + OpenAI)
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: agent.yaml (redact anything sensitive)
+      render: yaml
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Console output around the failure. Strip API keys.
+      render: shell
+  - type: input
+    id: version
+    attributes:
+      label: offhook version / commit
+    validations:
+      required: true

@@ -1,0 +1,16 @@
+# Tier 3: LLM-simulated callers against the real agent loop, graded by LLM judge.
+# Produces the published eval scorecard. Costs API money — nightly, not per-commit.
+# Stub until v0.1 code lands.
+name: Nightly evals
+on:
+  schedule:
+    - cron: "0 9 * * *" # 09:00 UTC daily
+  workflow_dispatch:
+
+jobs:
+  simulated-calls:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tier 3 simulated-call evals (placeholder)
+        run: echo "Eval harness lands with v0.1."

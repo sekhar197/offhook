@@ -1,0 +1,16 @@
+# Monthly canary: run the full eval suite against the LATEST vendor SDKs
+# (LiveKit, Deepgram, Cartesia, OpenAI) so API drift is caught by CI,
+# not by user bug reports. Stub until v0.1 code lands.
+name: Dependency canary
+on:
+  schedule:
+    - cron: "0 10 1 * *" # 1st of each month, 10:00 UTC
+  workflow_dispatch:
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Evals against latest vendor SDKs (placeholder)
+        run: echo "Canary lands with v0.1."
