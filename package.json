@@ -40,7 +40,8 @@
     "test:watch": "vitest",
     "dev": "tsx src/index.ts",
     "bench": "tsx bench/run-bench.ts",
-    "eval": "tsx src/evals/run.ts"
+    "eval": "tsx src/evals/run.ts",
+    "eval:usecases": "tsx src/evals/run-usecases.ts"
   },
   "dependencies": {
     "@clack/prompts": "^1.5.1",

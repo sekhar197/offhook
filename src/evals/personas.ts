@@ -23,6 +23,16 @@ export interface Persona {
   maxTurns: number;
 }
 
+/** Wrap personas so the caller speaks a target language (for multilingual
+ *  use-case tests). The agent is expected to answer in the same language. */
+export function localizePersonas(personas: Persona[], languageName: string): Persona[] {
+  return personas.map(p => ({
+    ...p,
+    id: p.id,
+    systemPrompt: `${p.systemPrompt}\n\nIMPORTANT: speak ONLY in ${languageName}. Every line you say must be in ${languageName}.`,
+  }));
+}
+
 const BASE = `You are a CALLER phoning a business's AI receptionist. You speak ONE short, natural turn at a time, like a real phone call — never narrate, never break character, never write stage directions. Keep each turn to one or two sentences. When your goal is met or you're done, say a brief goodbye and then output exactly "[HANGUP]" on its own at the end.`;
 
 export const DEFAULT_PERSONAS: Persona[] = [

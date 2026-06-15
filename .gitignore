@@ -28,3 +28,4 @@ examples/*/agent.local.yaml
 
 # generated eval scorecard (regenerate with a capable judge for launch)
 docs/scorecard.md
+docs/usecases.md
