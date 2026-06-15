@@ -8,7 +8,11 @@
  * scores (the judge needs to be capable); otherwise each config uses its own.
  */
 
-import { localizePersonas, DEFAULT_PERSONAS, type Persona } from './personas.js';
+import {
+  localizePersonas, DEFAULT_PERSONAS,
+  RECEPTIONIST_PERSONAS, SECRETARY_PERSONAS, TOUGH_CALLERS,
+  type Persona,
+} from './personas.js';
 
 export interface UseCase {
   id: string;
@@ -20,18 +24,27 @@ export interface UseCase {
   personas: Persona[];
 }
 
+// The generic adversarial caller belongs in every use case (an assistant must
+// resist override/leak attempts regardless of role).
+const ADVERSARIAL = DEFAULT_PERSONAS.find(p => p.id === 'adversarial')!;
+
+// Each use case runs its realistic caller mix. More personas = a more thorough
+// (but longer/pricier) run — filter to one case with OFFHOOK_EVAL_ONLY, or trim
+// these arrays. Deployments add their own personas the same way.
 export const USE_CASES: UseCase[] = [
   {
     id: 'business-receptionist',
     name: 'Business receptionist (hours, FAQ, messages, transfer)',
     config: 'examples/business-receptionist/agent.yaml',
-    personas: DEFAULT_PERSONAS,
+    // baseline + front-desk realities (booking, pricing, complaints) + tough callers
+    personas: [...DEFAULT_PERSONAS, ...RECEPTIONIST_PERSONAS, ...TOUGH_CALLERS],
   },
   {
     id: 'personal-secretary',
     name: 'Personal secretary (screen calls, take messages)',
     config: 'examples/personal-secretary/agent.yaml',
-    personas: DEFAULT_PERSONAS,
+    // call-screening realities (spam, recruiters, pushy sales, urgent family) + tough callers + adversarial
+    personas: [...SECRETARY_PERSONAS, ...TOUGH_CALLERS, ADVERSARIAL],
   },
   {
     id: 'self-hosted',
