@@ -41,7 +41,8 @@
     "dev": "tsx src/index.ts",
     "bench": "tsx bench/run-bench.ts",
     "eval": "tsx src/evals/run.ts",
-    "eval:usecases": "tsx src/evals/run-usecases.ts"
+    "eval:usecases": "tsx src/evals/run-usecases.ts",
+    "verify:safety": "tsx src/evals/verify-safety.ts"
   },
   "dependencies": {
     "@clack/prompts": "^1.5.1",
