@@ -1,0 +1,36 @@
+# 100%-local config — Nemotron-Mini (4B) via Ollama. No API keys.
+# Try it: `ollama pull nemotron-mini`, then `offhook chat -c agent.ollama.yaml`.
+agent:
+  id: bright-smile-dental
+  businessName: Bright Smile Dental
+  agentName: June
+  tone: warm
+  timezone: America/New_York
+
+business:
+  address: 12 Main Street, Maplewood, NJ
+  phone: "9735550142"
+  hours:
+    monday: from 9 AM to 5 PM
+    tuesday: from 9 AM to 5 PM
+    wednesday: from 9 AM to 7 PM
+    thursday: from 9 AM to 5 PM
+    friday: from 9 AM to 3 PM
+  policies:
+    insurance: We accept most major plans — bring your card to the first visit.
+    parking: Free lot behind the building, entrance on Oak Street.
+
+knowledge:
+  folder: ./knowledge
+  vocabulary:
+    aliases:
+      cleening: Teeth Cleaning
+
+tools:
+  enabled: [answer_from_knowledge, take_message, transfer_to_human, end_call]
+  transferPhone: "+19735550100"
+
+models:
+  llm:
+    provider: ollama
+    model: nemotron-mini

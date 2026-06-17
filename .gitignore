@@ -21,8 +21,6 @@ coverage/
 .idea/
 .vscode/
 .claude/
-examples/*/agent.ollama.yaml
-examples/*/agent.local.yaml
 
 # local model caches
 .cache/
@@ -37,3 +35,6 @@ docs/usecases.md
 
 # self-improvement run artifacts (scorecard + audit trail)
 improve/
+
+# packed npm tarballs
+*.tgz

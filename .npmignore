@@ -1,0 +1,6 @@
+# run artifacts + tarballs that must never ship in the package
+*.tgz
+call-records.jsonl
+*.call-records.jsonl
+improve/
+.claude/

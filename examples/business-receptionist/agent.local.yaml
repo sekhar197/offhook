@@ -1,0 +1,48 @@
+# Hybrid voice config: LOCAL brain (Ollama, your GPU) + OpenAI ears/voice.
+# Fully-local streaming STT hits a real wall (LiveKit's STT plugin wants a
+# realtime websocket a local Whisper server doesn't implement), so STT/TTS use
+# OpenAI here. A self-hosted LiveKit server handles the transport.
+agent:
+  id: bright-smile-dental
+  businessName: Bright Smile Dental
+  agentName: June
+  tone: warm
+  timezone: America/New_York
+
+business:
+  address: 12 Main Street, Maplewood, NJ
+  phone: "9735550142"
+  hours:
+    monday: from 9 AM to 5 PM
+    wednesday: from 9 AM to 7 PM
+    friday: from 9 AM to 3 PM
+  policies:
+    insurance: We accept most major plans — bring your card to the first visit.
+
+knowledge:
+  folder: ./knowledge
+  vocabulary:
+    aliases:
+      cleening: Teeth Cleaning
+
+tools:
+  enabled: [answer_from_knowledge, take_message, transfer_to_human, end_call]
+  transferPhone: "+19735550100"
+
+voice:
+  mode: cascaded
+  stt:
+    provider: openai-compatible   # local whisper.cpp server — fully local STT
+    baseUrl: http://localhost:8080/v1
+  tts:
+    provider: openai
+    model: gpt-4o-mini-tts
+    voice: alloy
+  turnDetection: stt-endpoint
+  endpointingMaxDelayMs: 1500
+  allowInterruptions: false   # echo-prone local test — agent finishes its turn
+
+models:
+  llm:                        # the LOCAL part — your Mac's GPU
+    provider: ollama
+    model: qwen2.5:3b

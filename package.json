@@ -1,7 +1,7 @@
 {
   "name": "offhook",
-  "version": "0.1.0-dev",
-  "description": "Don't build a voice agent. Deploy one. A complete, production-hardened AI voice agent \u2014 BYOK, one command, phone-ready.",
+  "version": "0.1.0",
+  "description": "The open, safety-first voice agent: it tests itself with adversarial callers and improves itself from real calls \u2014 gated so it can't break its own safety. Self-hostable, BYOK, any model.",
   "license": "Apache-2.0",
   "author": "Sekhar Makkapati <sekharmakkapati@gmail.com>",
   "type": "module",
@@ -21,6 +21,10 @@
     "tts",
     "phone",
     "receptionist",
+    "self-improving",
+    "ai-safety",
+    "self-hosted",
+    "evals",
     "mcp"
   ],
   "bin": {
@@ -31,9 +35,11 @@
   "files": [
     "bin/",
     "dist/",
-    "web/"
+    "web/",
+    "examples/"
   ],
   "scripts": {
+    "prepack": "npm run build",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

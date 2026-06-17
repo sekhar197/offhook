@@ -54,24 +54,33 @@ A production-hardened **cascaded** pipeline — STT → LLM → TTS over [LiveKi
 
 ## Quickstart
 
-**Works today — no voice keys, no telephony.** Talk to your agent in the terminal, run the evals, and try the self-improvement loop with a single LLM key (or $0 on a local model):
+**Install it (no voice keys, no telephony needed):**
+
+```bash
+npm install -g offhook        # or run any command with: npx offhook <cmd>
+
+offhook init                  # wizard: name, model, paste your key → scaffolds agent.yaml + knowledge/
+offhook doctor                # verify config, knowledge, and keys
+offhook chat                  # talk to your agent in the terminal
+offhook improve               # learn from real calls; propose a config fix, applied only if it passes the safety gate
+offhook dashboard             # local web UI: call logs, transcripts, scorecard, improve
+```
+
+> First run downloads a small local embedding model (for knowledge search) — a one-time ~tens-of-MB fetch.
+
+**From source** (to run the full eval suite, or to contribute):
 
 ```bash
 git clone https://github.com/sekhar197/offhook && cd offhook
 npm install && npm run build
 
-node bin/offhook.js init      # wizard: pick a template, paste your key
-node bin/offhook.js chat      # talk to your agent (real prompts, search, tools)
-
 npm run verify:safety         # adversarial caller vs your agent — does it hold the line?
 npm run eval                  # the full simulated-caller scorecard
-node bin/offhook.js improve   # learn from call records; propose a safe, gated edit
-node bin/offhook.js dashboard # local web UI: call logs, transcripts, scorecard, improve
 ```
 
-**Full local walkthrough** (including seeding call records to try `improve`, and the local-model path): [docs/local-testing.md](docs/local-testing.md).
+**Full local walkthrough** (seeding call records to try `improve`, the local-model path, recording a demo): [docs/local-testing.md](docs/local-testing.md).
 
-**Voice & phone.** A LiveKit account + provider keys turn on the browser-mic and SIP paths (`docker compose up` → talk in your browser; point a number at it to answer real calls). See [docs/deploy.md](docs/deploy.md) and [docs/telephony.md](docs/telephony.md) — honest about what's wired and what isn't.
+**Voice & phone.** A LiveKit account + provider keys turn on the browser-mic and SIP paths (`offhook dev` → talk in your browser; point a number at it to answer real calls). See [docs/deploy.md](docs/deploy.md) and [docs/telephony.md](docs/telephony.md) — honest about what's wired and what isn't.
 
 ## Status
 
