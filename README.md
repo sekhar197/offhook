@@ -1,10 +1,69 @@
 # offhook
 
-> **The open, safety-first voice agent — that tests itself, and improves itself without breaking its own safety.**
+> **A production-grade AI voice agent that answers real phone calls — on your own infrastructure, with your own provider, ready in minutes.**
 
-offhook is a production-hardened, self-hostable AI voice agent that answers phone calls. Bring your own keys, any model (hosted or fully local), one config file. What makes it different isn't that it talks — lots of things talk. It's that **offhook tests itself with adversarial callers, and can improve itself from real calls — gated so a self-edit can never regress the behaviors that matter** (handing a chest-pain caller to 911, never giving medical advice, never leaking internals).
+Bring your keys, point a phone number at it, and offhook answers calls with a real, tool-using agent: it searches your knowledge, takes messages that actually get delivered, transfers to a human, and won't say things it shouldn't. One config file. Any LLM (hosted or fully local). Twilio **or** Telnyx, a new number **or** the one you already own. Self-hosted on your laptop, a VPS, or any cloud — no SaaS in the call path, your data never leaves your box.
 
-<!-- TODO(launch): replace with the 90s demo GIF/asciinema — see docs/launch/demo-storyboard.md -->
+It's not a demo. It's extracted from a voice agent that's been answering real phone calls in production since 2025 — and it ships the things that turn a demo into something you can actually put a phone number on: an adversarial safety eval suite, structured call records, idempotent delivery, and a safety-gated loop that learns from real calls **without ever regressing its own safety**.
+
+<!-- TODO(launch): replace with the 90s demo cast — see docs/launch/demo-storyboard.md -->
+
+```text
+   ██████╗ ███████╗███████╗██╗  ██╗ ██████╗  ██████╗ ██╗  ██╗
+  ██╔═══██╗██╔════╝██╔════╝██║  ██║██╔═══██╗██╔═══██╗██║ ██╔╝
+  ██║   ██║█████╗  █████╗  ███████║██║   ██║██║   ██║█████╔╝
+  ██║   ██║██╔══╝  ██╔══╝  ██╔══██║██║   ██║██║   ██║██╔═██╗
+  ╚██████╔╝██║     ██║     ██║  ██║╚██████╔╝╚██████╔╝██║  ██╗
+   ╚═════╝ ╚═╝     ╚═╝     ╚═╝  ╚═╝ ╚═════╝  ╚═════╝ ╚═╝  ╚═╝
+
+  a production-grade voice agent · your infra · your provider · ready in minutes
+```
+
+## From zero to a number that answers
+
+```bash
+npm install -g offhook            # or run any command with: npx offhook <cmd>
+
+offhook init                      # wizard: name, model, paste one key → agent.yaml + knowledge/
+offhook doctor                    # verify config, knowledge, keys
+offhook chat                      # talk to your agent in the terminal — right now, no voice keys
+
+# add a LiveKit account + a telephony key, then:
+offhook phone use +19735550142 --provider twilio   # bring your own number…
+offhook phone provision --area-code 973 --provider telnyx   # …or buy a fresh one
+offhook phone connect             # wires the number → LiveKit → your agent
+offhook start                     # the worker answers it. call it.
+```
+
+That's the whole path: **install → init → chat → connect a number → answer real calls.** Single-key OpenAI mode means one signup gets you a talking agent; Deepgram/Cartesia/local models are one line away when you want them.
+
+## Why offhook (and not the engine underneath it)
+
+offhook runs on [LiveKit](https://github.com/livekit/agents) for media transport — the same way a web app runs on a web server. **LiveKit is the engine; offhook is the agent.** What you'd otherwise build by hand on top of that engine, and what offhook gives you in one config file:
+
+| You need | A starter template gives you | offhook gives you |
+|---|---|---|
+| **An agent that doesn't go off the rails** | a prompt | phase-gated tools (no regex intent classification), an ASR-correction layer with negation safety, hybrid BM25 + embedding knowledge search, and every caller-facing line linted for technical leakage |
+| **Proof it's safe before you ship** | nothing | an open adversarial eval suite — 35 caller personas incl. chest-pain→**911**, gas-smell→**evacuate**, and prompt-injection probes. `npm run verify:safety`, CI-gateable, free |
+| **A real phone number** | wire SIP by hand | `offhook phone` — Twilio **or** Telnyx, new **or** bring-your-own number, provisioned + connected for you |
+| **Actions that actually happen** | a webhook stub | `take_message` that really texts/emails the owner (Twilio/Resend, BYO key), idempotent so a retry never double-sends |
+| **To run it anywhere** | a Dockerfile, maybe | `offhook deploy --target fly\|railway\|render\|k8s\|docker` from one tested image — or fully local/air-gapped |
+| **To see + improve it** | grep logs | a local dashboard (call logs, transcripts, scorecard) + `offhook improve` — learns from real calls, applies a fix **only if it passes the safety gate** |
+
+You could assemble most of this yourself. offhook is the opinionated, tested, production-hardened version so you don't have to — and so you can read the source and trust what it does.
+
+## What's under the hood
+
+A **cascaded** pipeline — STT → LLM → TTS — because the cascade is where the brain lives (tool-calling, ASR correction, caller-safety) and where you keep control. (The research backs this: end-to-end speech-to-speech still can't tool-call reliably — Full-Duplex-Bench-v3 measures ~0.60 Pass@1 on tool use vs a cascade's clean turn-taking. offhook supports a realtime mode as an option; cascaded is the default for a reason, and the README says which.)
+
+- **Any model.** Every OpenAI-compatible LLM — hosted (OpenAI, OpenRouter, DeepSeek, Groq, Together, NVIDIA) or local (Ollama, vLLM, llama.cpp). STT/TTS swappable, including a fully-local Whisper/Piper path. Your data never has to leave your perimeter.
+- **One `agent.yaml`** — name, personality, voice, knowledge, tools, hours, transfer number, safety instructions. Editable from the CLI (`offhook config set`) or the dashboard, with every edit re-validated and backed up before it's written.
+- **Observability** — every call writes a structured record (transcript, tools, outcome, per-turn latency) you can review in the dashboard or pipe anywhere.
+- **9 example verticals** — receptionist, restaurant, medical clinic (clinical-safety routing), home-services dispatch (urgent + gas-smell), personal call-screening, multilingual (es/hi/te), fully self-hosted.
+
+## The part nobody else leads with: it can improve itself, safely
+
+`offhook improve` reads your real call records, finds what's failing, and proposes an edit to your `agent.yaml` (instructions + vocabulary only — never code). In the default **gated** mode, that edit is applied **only if it passes the full eval including the safety personas.** Autonomous, but it *cannot* ship a change that regresses chest-pain→911, never-give-medical-advice, or no-internal-leak.
 
 ```mermaid
 flowchart LR
@@ -15,80 +74,27 @@ flowchart LR
   D -->|safety regressed| F([⛔ Blocked — nothing changes])
 ```
 
-*Autonomous — but it can never ship a change that breaks its own safety evals.*
+Self-improving agents, voice-eval platforms (Coval, Hamming, Cekura), and eval-gated prompt optimization (DSPy, TextGrad) all exist — offhook doesn't claim to invent self-improvement. Its specific contribution is the **combination**: it's the open, self-hostable *agent itself*, that tests itself with adversarial callers, and improves itself **gated by its own safety suite.** Credit where due; the gate is the part that makes "self-improving" responsible instead of reckless.
 
-<!-- TODO(launch): replace this block with an asciinema/GIF of `offhook help` + a session — see docs/local-testing.md -->
-
-```text
-   ██████╗ ███████╗███████╗██╗  ██╗ ██████╗  ██████╗ ██╗  ██╗
-  ██╔═══██╗██╔════╝██╔════╝██║  ██║██╔═══██╗██╔═══██╗██║ ██╔╝
-  ██║   ██║█████╗  █████╗  ███████║██║   ██║██║   ██║█████╔╝
-  ██║   ██║██╔══╝  ██╔══╝  ██╔══██║██║   ██║██║   ██║██╔═██╗
-  ╚██████╔╝██║     ██║     ██║  ██║╚██████╔╝╚██████╔╝██║  ██╗
-   ╚═════╝ ╚═╝     ╚═╝     ╚═╝  ╚═╝ ╚═════╝  ╚═════╝ ╚═╝  ╚═╝
-
-  the open, safety-first voice agent
-  it tests itself · it improves itself · it won't break its own safety
-```
-
-## Why this is different (and what already exists — credit where due)
-
-Self-improving agents ([Hermes](https://github.com/NousResearch/hermes-agent)), voice-eval platforms (Coval, Hamming, Cekura), and eval-gated prompt optimization (DSPy, TextGrad) all exist. offhook is **not** claiming to invent self-improvement. Its specific, uncontested contribution is the **combination**:
-
-1. **It's the agent itself — open and self-hostable.** Not a closed SaaS you point at someone else's agent; not a framework you assemble. BYO keys, any OpenAI-compatible LLM, STT/TTS swappable, runs fully local. Your data never leaves your box.
-2. **It tests itself — an open adversarial eval harness, in the repo.** 35 LLM-driven caller personas across 9 verticals, including the ones that matter: a chest-pain caller who must be sent to **911**, a gas-smell caller who must be told to **evacuate**, and prompt-injection probes. `npm run eval` and `npm run verify:safety` — free, reproducible, CI-gateable. No SaaS.
-3. **It improves itself — safely.** `offhook improve` learns from real call records and proposes edits to your `agent.yaml`. In the default **gated** mode, a change is applied *only if* it passes the full eval including the safety personas. Autonomous, but it **cannot** regress its own safety. (An `--unguarded` mode exists for the brave; it warns loudly.)
-
-The safety gate is the part nobody else leads with — and it's the reason "self-improving" is responsible here instead of reckless.
-
-## What it is (the agent under the hood)
-
-A production-hardened **cascaded** pipeline — STT → LLM → TTS over [LiveKit](https://github.com/livekit/agents) — because the cascade is where the brain lives (tool-calling, ASR correction, caller-safety), and where self-improvement can act:
-
-- **Any model.** Every OpenAI-compatible LLM: hosted (OpenAI, OpenRouter, DeepSeek, Groq, Together, NVIDIA) or local (Ollama, vLLM, llama.cpp). STT/TTS swappable, incl. a fully-local Whisper/Piper path.
-- **One `agent.yaml`** — name, personality, voice, knowledge, tools, hours, transfer number, safety instructions.
-- **The hardening**, learned answering real calls: phase-gated tools (no regex intent classification), an ASR-correction layer with negation safety, hybrid BM25 + embedding knowledge search, idempotent action execution, and every caller-facing message linted for technical leakage.
-- **Actions that land** — `take_message` actually texts/emails the owner (Twilio/Resend, BYO key); webhook for everything else.
-- **Observability** — every call writes a structured record (transcript, tools, outcome, per-turn latency) you can review.
-- **9 example verticals** — receptionist, restaurant, medical clinic (clinical-safety routing), home-services dispatch (urgent + gas-smell), personal call-screening, multilingual (es/hi/te), fully self-hosted.
-
-## Quickstart
-
-**Install it (no voice keys, no telephony needed):**
-
-```bash
-npm install -g offhook        # or run any command with: npx offhook <cmd>
-
-offhook init                  # wizard: name, model, paste your key → scaffolds agent.yaml + knowledge/
-offhook doctor                # verify config, knowledge, and keys
-offhook chat                  # talk to your agent in the terminal
-offhook improve               # learn from real calls; propose a config fix, applied only if it passes the safety gate
-offhook dashboard             # local web UI: call logs, transcripts, scorecard, improve
-```
-
-> First run downloads a small local embedding model (for knowledge search) — a one-time ~tens-of-MB fetch.
-
-**From source** (to run the full eval suite, or to contribute):
+## Run the full eval suite (from source)
 
 ```bash
 git clone https://github.com/sekhar197/offhook && cd offhook
 npm install && npm run build
 
-npm run verify:safety         # adversarial caller vs your agent — does it hold the line?
-npm run eval                  # the full simulated-caller scorecard
+npm run verify:safety             # adversarial caller vs your agent — does it hold the line?
+npm run eval                      # the full simulated-caller scorecard
 ```
 
-**Full local walkthrough** (seeding call records to try `improve`, the local-model path, recording a demo): [docs/local-testing.md](docs/local-testing.md).
-
-**Voice & phone.** A LiveKit account + provider keys turn on the browser-mic and SIP paths (`offhook dev` → talk in your browser; point a number at it to answer real calls). See [docs/deploy.md](docs/deploy.md) and [docs/telephony.md](docs/telephony.md) — honest about what's wired and what isn't.
+Every published number is regenerable by one command; the personas and judge prompts live in the repo, so a skeptic can reproduce or refute them. **Full local walkthrough** (seeding records to try `improve`, the local-model path, recording a demo): [docs/local-testing.md](docs/local-testing.md). **Phone setup, both providers, BYO number:** [docs/telephony.md](docs/telephony.md). **Deploy targets:** [docs/deploy.md](docs/deploy.md).
 
 ## Status
 
-🚧 **Pre-release, in active development**, extracted from a voice agent answering real phone calls in production since 2025. The text path, the eval harness, and the safety-gated `improve` loop work today; the voice/telephony paths need your LiveKit + provider accounts; a local web dashboard is on the near roadmap. Watch the repo for the launch.
+🚧 **Pre-release, in active development**, extracted from a voice agent answering real calls in production since 2025. The text path, eval harness, dashboard, config editing, deploy generators, and the safety-gated `improve` loop work today. The voice + telephony paths need your LiveKit + provider accounts; **Twilio is exercised in tests, the Telnyx client is implemented to their v2 API and should be validated on a live account.** Honest about what's wired and what isn't — see the per-doc notes. Watch the repo for the launch.
 
 ## Scope & governance
 
-Deliberately narrow: **one hardened, safe, self-improving voice agent — done well.** Bug reports very welcome. Feature requests that broaden scope into a multi-tenant SaaS or a visual builder will usually be declined — that's what platforms are for. The durable differentiators here are the open adversarial eval harness, the safety-gated self-improvement, and the production-hardening lessons in [`docs/lessons/`](docs/lessons/).
+Deliberately narrow: **one hardened, safe, self-improving voice agent you run yourself — done well.** Bug reports very welcome. Feature requests that turn it into a multi-tenant SaaS or a visual builder will usually be declined — that's what platforms are for. The durable differentiators are the open adversarial eval suite, the safety-gated self-improvement, and the production-hardening lessons in [`docs/lessons/`](docs/lessons/).
 
 ## License
 
