@@ -59,7 +59,7 @@ A **cascaded** pipeline — STT → LLM → TTS — because the cascade is where
 - **Any model.** Every OpenAI-compatible LLM — hosted (OpenAI, OpenRouter, DeepSeek, Groq, Together, NVIDIA) or local (Ollama, vLLM, llama.cpp). STT/TTS swappable, including a fully-local Whisper/Piper path. Your data never has to leave your perimeter.
 - **One `agent.yaml`** — name, personality, voice, knowledge, tools, hours, transfer number, safety instructions. Editable from the CLI (`offhook config set`) or the dashboard, with every edit re-validated and backed up before it's written.
 - **Observability** — every call writes a structured record (transcript, tools, outcome, per-turn latency) you can review in the dashboard or pipe anywhere.
-- **9 example verticals** — receptionist, restaurant, medical clinic (clinical-safety routing), home-services dispatch (urgent + gas-smell), personal call-screening, multilingual (es/hi/te), fully self-hosted.
+- **7 ready-to-run examples** — receptionist, restaurant, medical clinic (clinical-safety routing), home-services dispatch (urgent + gas-smell), personal call-screening, multilingual (es/hi/te), and a fully self-hosted config.
 
 ## The part nobody else leads with: it can improve itself, safely
 
@@ -90,7 +90,7 @@ Every published number is regenerable by one command; the personas and judge pro
 
 ## Status
 
-🚧 **Pre-release, in active development**, extracted from a voice agent answering real calls in production since 2025. The text path, eval harness, dashboard, config editing, deploy generators, and the safety-gated `improve` loop work today. The voice + telephony paths need your LiveKit + provider accounts; **Twilio is exercised in tests, the Telnyx client is implemented to their v2 API and should be validated on a live account.** Honest about what's wired and what isn't — see the per-doc notes. Watch the repo for the launch.
+🚧 **Pre-release, in active development.** The architecture and turn loop are extracted from a voice agent that has answered real phone calls in production since 2025 — but the *extracted* code in this repo is pre-release: the text path, eval harness, dashboard, config editing, deploy generators, and the safety-gated `improve` loop are tested and work today (338 tests, all account-free); the voice + telephony paths are fully wired but need your LiveKit + provider accounts to run, and **Twilio is exercised in tests while the Telnyx client is implemented to their v2 API and should be validated on a live account.** For an exact, honest breakdown of what's tested vs. what needs live accounts vs. what hasn't yet run on real audio in this repo, see **[docs/testing-status.md](docs/testing-status.md)**. Watch the repo for the launch.
 
 ## Scope & governance
 

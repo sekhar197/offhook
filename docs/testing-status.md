@@ -1,0 +1,86 @@
+# Testing status — what's proven, what needs your accounts, what hasn't run yet
+
+offhook is built for an audience that reads the source and runs the code. So this
+page is deliberately blunt about what is and isn't verified. No silent caps: if a
+claim is only proven by a unit test with a fake, it says so; if a path has never
+run on real audio in *this* repo, it says that too.
+
+**Last updated:** 2026-06-18 · **Suite:** 338 tests, all passing, ~2.3s, fully
+account-free (`npm test`).
+
+---
+
+## ✅ Tested and account-free (runs in CI on every commit)
+
+These run with **no API keys** — fakes are injected at every I/O boundary (fake
+`fetch`, fake SIP API, fake LLM completer, tmp dirs).
+
+| Area | What's covered | Where |
+|---|---|---|
+| **Safety gate** | The improve gate **BLOCKS** a self-edit that regresses a safety dimension; allows safe edits; tolerates epsilon overall-regression | `src/improve/gate.test.ts` |
+| **Caller-safe linter** | Tool/agent messages are rejected for technical leakage (`API`, `database`, …) and length (>120 chars) | `src/tools/tools.test.ts` |
+| **Config edit safety** | Only allowlisted paths write; the brain (`models.*`) is rejected; invalid edits write nothing + create no backup | `src/config/edit.test.ts` |
+| **Action delivery** | SMS (Twilio) / email (Resend) / webhook payloads + auth; failed delivery offers human transfer; **idempotency** (HTTP errors never retry) | `src/actions/delivery.test.ts`, `executor.test.ts` |
+| **Telephony orchestration** | Provision / use-existing / connect / release sequences, both providers, against fake Twilio/Telnyx/LiveKit APIs | `src/telephony/*.test.ts` |
+| **Search / ASR / state** | BM25 + category fallback, fuzzy resolver, ASR-correction negation guards, state derivation | `src/search/`, `src/resolver/`, `src/asr/`, `src/state/` |
+| **Voice transforms** | Pronunciation, text-naturalize, semantic-interrupt, interim-speculation, endpointing tuner | `src/voice/*.test.ts` |
+| **Observability** | Call records (transcript, tools, outcome, latency), malformed-line tolerance | `src/observability/*.test.ts` |
+| **Deploy generators** | fly / railway / render / k8s / docker artifacts (snapshot-tested) from one image | `src/deploy/generators.test.ts` |
+| **Dashboard API** | Routes, token guard, no-key-value-leak | `src/server/dashboard.test.ts` |
+
+## 🔑 Wired, but needs live accounts to verify (not run in CI)
+
+The code is complete and instantiates real providers; it just can't run without
+credentials, so CI exercises it with fakes only.
+
+| Path | Needs | Status in this repo |
+|---|---|---|
+| **LLM turn loop on a real model** | `OPENAI_API_KEY` (or Ollama/local) | Run via `npm run eval` / `npm run verify:safety`; not part of `npm test` |
+| **Browser-mic voice round-trip** (`offhook dev`) | `LIVEKIT_*` + an LLM key | Wired; verify on your LiveKit |
+| **Real phone call** (`offhook start`) | `LIVEKIT_*`, `LIVEKIT_SIP_URI`, `TWILIO_*` or `TELNYX_*` | Wired; see [runbook-livecall.md](runbook-livecall.md) |
+| **SMS / email delivery actually landing** | `TWILIO_*` / `RESEND_API_KEY` | Payloads tested; live send is yours to confirm |
+| **Telnyx** (any path) | `TELNYX_API_KEY` | Implemented to the v2 API; **validate on a live account** — open item |
+
+## ⚠️ Never run on real audio in *this* repo
+
+The architecture and turn loop are production-proven in the closed-source parent
+(Nirvah), but the extracted offhook code has **not** been exercised end-to-end on
+real audio here. Specifically unverified in this repo:
+
+- The full STT → LLM → TTS cascade over LiveKit on live audio.
+- **Narrowband (8 kHz mono) telephony audio** — VAD/STT/endpointing are tuned for
+  wideband; phone audio degrades them. Validate on a real call.
+- **SIP REFER warm transfer** — the LiveKit call is real and unit-tested against a
+  fake; REFER behavior varies by carrier. On failure it falls back to reading the
+  number aloud (never dead-air), but the live REFER is unverified.
+- **Realtime (speech-to-speech) mode** — config parsing is tested; no audio run.
+
+See [runbook-livecall.md](runbook-livecall.md) for the live verification steps and
+[real-call-report.md](real-call-report.md) to record results.
+
+## 🧪 Brutal-testing coverage (in progress, pre-launch)
+
+Tracking the hardening pass that backs the "production-grade" claim. Updated as
+each tier lands.
+
+- [ ] **Adversarial corpus** — 50+ jailbreak / prompt-injection / exfil payloads
+      through the caller-safe linter (account-free), plus dedicated injection /
+      exfil / PII-bait personas in the safety gate.
+- [ ] **PII-leak tests** — assert phone numbers / emails aren't emitted raw where
+      they shouldn't be; document where redaction is and isn't done.
+- [ ] **Mutation testing (Stryker)** — on the gate, caller-safe linter,
+      idempotency, and config allowlist, to prove the tests would catch a
+      regression (not just execute the code).
+- [ ] **Property/fuzz (fast-check)** — search invariants, caller-safe, config-edit
+      allowlist, idempotency-key uniqueness.
+- [ ] **Stress / concurrency / chaos** — parallel call-record writes, idempotency
+      under burst, graceful degradation under injected latency/drops, large
+      knowledge base. *Measured ceilings will be documented here — no silent caps.*
+
+## Honest limitations (won't pretend otherwise)
+
+- "Production-grade" refers to the hardening (state-gated tools, ASR correction,
+  caller-safety, idempotent delivery, the safety gate) and the test discipline —
+  **not** to SOC2 / RBAC / a PII-redaction middleware (not built; on the roadmap).
+- You are the operator of record for any phone line — see
+  [telephony.md](telephony.md) for consent / AI-disclosure / TCPA responsibilities.
