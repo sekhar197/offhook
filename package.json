@@ -50,7 +50,8 @@
     "eval:usecases": "tsx src/evals/run-usecases.ts",
     "verify:safety": "tsx src/evals/verify-safety.ts",
     "test:mutation": "stryker run",
-    "test:stress": "vitest run test/stress"
+    "test:stress": "vitest run test/stress",
+    "e2e": "tsx test/e2e/headless-livekit.ts"
   },
   "dependencies": {
     "@clack/prompts": "^1.5.1",

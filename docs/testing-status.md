@@ -59,7 +59,11 @@ real audio here. Specifically unverified in this repo:
 - **Realtime (speech-to-speech) mode** — config parsing is tested; no audio run.
 
 See [runbook-livecall.md](runbook-livecall.md) for the live verification steps and
-[real-call-report.md](real-call-report.md) to record results.
+[real-call-report.md](real-call-report.md) to record results. The harness is
+written and waiting: `offhook doctor` now preflights LiveKit creds, the SIP URI,
+and speech-plugin presence (so a real call doesn't fail mid-stream on a missing
+plugin), and `npm run e2e` (`test/e2e/headless-livekit.ts`) dispatches the worker
+into a real room — its audio-frame assertion is the documented live step.
 
 ## 🧪 Brutal-testing coverage (in progress, pre-launch)
 

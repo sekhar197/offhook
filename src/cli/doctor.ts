@@ -6,6 +6,7 @@
  */
 
 import { resolve, dirname } from 'node:path';
+import { createRequire } from 'node:module';
 import { loadAgentConfig, llmConfigInput, ConfigError } from '../config/agent-config.js';
 import { loadKnowledgeFolder, KnowledgeError } from '../knowledge/loader.js';
 import { resolveLlm, resolveApiKey, LlmConfigError } from '../llm/provider.js';
@@ -115,6 +116,41 @@ export async function doctorCommand(configPath: string): Promise<void> {
       ? `webhook: ${config.tools.webhookUrl}`
       : 'no webhookUrl — take_message prints to console (fine for testing)',
   });
+
+  // 7. Voice/phone infrastructure — optional. Only flagged when you've set
+  //    LiveKit creds (intent to run live audio). Catches the runtime surprises
+  //    a real call hits that text mode never does: missing creds, missing SIP
+  //    endpoint, and an uninstalled speech-provider plugin.
+  const lkVars = ['LIVEKIT_URL', 'LIVEKIT_API_KEY', 'LIVEKIT_API_SECRET'];
+  const lkMissing = lkVars.filter(v => !process.env[v]);
+  if (lkMissing.length === lkVars.length) {
+    checks.push({ label: 'livekit', ok: true, detail: 'not configured — chat/text mode only (set LIVEKIT_URL/API_KEY/API_SECRET for voice)' });
+  } else {
+    checks.push({
+      label: 'livekit', ok: lkMissing.length === 0,
+      detail: lkMissing.length === 0 ? 'creds set — voice enabled' : `missing ${lkMissing.join(' + ')} — voice won't start`,
+    });
+    checks.push({
+      label: 'phone (sip)', ok: true,
+      detail: process.env.LIVEKIT_SIP_URI ? 'LIVEKIT_SIP_URI set — phone enabled' : 'no LIVEKIT_SIP_URI — set it only to answer a real number (offhook phone …)',
+    });
+    // Speech-provider plugins are lazy-loaded at call time; a missing one fails
+    // mid-call, not at startup. Surface it here instead.
+    const PLUGIN: Record<string, string> = {
+      openai: '@livekit/agents-plugin-openai', deepgram: '@livekit/agents-plugin-deepgram',
+      cartesia: '@livekit/agents-plugin-cartesia', elevenlabs: '@livekit/agents-plugin-elevenlabs',
+      assemblyai: '@livekit/agents-plugin-assemblyai', azure: '@livekit/agents-plugin-azure',
+      google: '@livekit/agents-plugin-google', rime: '@livekit/agents-plugin-rime',
+    };
+    const req = createRequire(import.meta.url);
+    const needed = new Set<string>(['@livekit/agents-plugin-silero']); // VAD, cascaded default
+    for (const p of [sttP, ttsP]) { if (PLUGIN[p]) needed.add(PLUGIN[p]); }
+    const missingPlugins = [...needed].filter(pkg => { try { req.resolve(pkg); return false; } catch { return true; } });
+    checks.push({
+      label: 'voice plugins', ok: missingPlugins.length === 0,
+      detail: missingPlugins.length === 0 ? `installed (${[...needed].length})` : `missing: ${missingPlugins.join(', ')} — npm i ${missingPlugins.join(' ')}`,
+    });
+  }
 
   print(checks);
   if (fatal) process.exit(1);
