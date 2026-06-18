@@ -5,7 +5,7 @@ page is deliberately blunt about what is and isn't verified. No silent caps: if 
 claim is only proven by a unit test with a fake, it says so; if a path has never
 run on real audio in *this* repo, it says that too.
 
-**Last updated:** 2026-06-18 · **Suite:** 345 tests, all passing, ~1.6s, fully
+**Last updated:** 2026-06-18 · **Suite:** 369 tests, all passing, ~1.6s, fully
 account-free (`npm test`).
 
 ---
@@ -28,6 +28,8 @@ These run with **no API keys** — fakes are injected at every I/O boundary (fak
 | **Deploy generators** | fly / railway / render / k8s / docker artifacts (snapshot-tested) from one image | `src/deploy/generators.test.ts` |
 | **Dashboard API** | Routes, token guard, no-key-value-leak | `src/server/dashboard.test.ts` |
 | **Adversarial corpus** | 50+ leak/injection/exfil probes through the caller-safe linter; secrets never reach the dashboard surface | `src/security/*.test.ts` |
+| **Stress / concurrency / chaos** | 500-call idempotency burst, 300-write log concurrency + corruption tolerance, 10k-entry search, hostile-input fuzz | `test/stress/*` |
+| **Mutation (Stryker)** | 71% across the safety/correctness crown jewels — proves the tests catch regressions | `npm run test:mutation` |
 
 ## 🔑 Wired, but needs live accounts to verify (not run in CI)
 
@@ -86,9 +88,20 @@ each tier lands.
       caught, length boundary, never throws) and the config-edit allowlist (no
       non-allowlisted path ever writes) across thousands of generated inputs
       (`*.property.test.ts`).
-- [ ] **Stress / concurrency / chaos** — parallel call-record writes, idempotency
-      under burst, graceful degradation under injected latency/drops, large
-      knowledge base. *Measured ceilings will be documented here — no silent caps.*
+- [x] **Stress / concurrency / chaos** (`test/stress/`, account-free, in-suite):
+      - **500 concurrent** `executeAction` calls → every idempotency key unique,
+        each lands exactly once (no cross-call collision, no double-send).
+      - **Chaos:** injected connection failures retry once then offer a human
+        (`failed_offer_transfer`) — never a silent third try, never dead-air;
+        HTTP 5xx never retries (the receiver may have acted).
+      - **300 concurrent** jsonl record appends → all read back intact; a
+        corrupted log (half-written + garbage + blank lines) still yields every
+        good record.
+      - **10k-entry knowledge base** → needle found and ranked first, result set
+        bounded (<100), search completes <3s (BM25 path).
+      - **Hostile input** (100k-char strings, emoji storms, mixed scripts, control
+        chars, + 300 fuzzed unicode runs) → the caller-safe and ASR guards never
+        throw and never spurious-correct.
 
 ## Honest limitations (won't pretend otherwise)
 
