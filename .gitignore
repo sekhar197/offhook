@@ -38,3 +38,6 @@ improve/
 
 # packed npm tarballs
 *.tgz
+
+# local telephony state (provisioned number/trunk/dispatch IDs)
+.offhook/
