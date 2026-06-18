@@ -18,16 +18,29 @@ Caller dials → Twilio/Telnyx SIP trunk → LiveKit SIP → LiveKit Room
 - A **phone number** from a SIP trunking provider (Twilio/Telnyx tested).
 - The worker running and registered (see [deploy.md](deploy.md)).
 
-## Setup (one time)
+## Setup — automated (recommended)
 
-1. **Provider number → LiveKit SIP.** In Twilio/Telnyx, create a SIP trunk that
-   sends inbound calls to your LiveKit SIP URI. (LiveKit Cloud shows the URI in
-   its dashboard; self-hosted, it's your SIP service address.)
-2. **LiveKit inbound trunk + dispatch rule.** Create an inbound trunk for the
-   number and a dispatch rule that routes calls to a room the worker will pick
-   up. The LiveKit SIP docs cover the exact `lk sip` commands; offhook does not
-   reinvent this — it uses LiveKit's standard SIP setup.
-3. **Caller ID.** offhook reads the caller's number from the SIP participant
+offhook provisions and connects the number for you. Set your credentials —
+`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `LIVEKIT_URL/API_KEY/API_SECRET`, and
+`LIVEKIT_SIP_URI` (your LiveKit SIP endpoint) — then:
+
+```bash
+offhook phone provision --area-code 973   # buys a number + Twilio SIP trunk → LiveKit
+offhook phone connect                     # creates the LiveKit inbound trunk + dispatch rule
+offhook start                             # the worker answers it
+offhook phone status                      # what's provisioned    ·    offhook phone release  # tear down
+```
+
+The same three steps are buttons in the dashboard's **Phone** panel
+(`offhook dashboard`). Telnyx is a fast-follow (same commands, different
+provider). Provisioned IDs live in a gitignored `.offhook/telephony.json`.
+
+## Setup — manual
+
+If you'd rather wire it by hand: create a provider SIP trunk pointed at your
+LiveKit SIP URI, then a LiveKit inbound trunk + dispatch rule (the `lk sip`
+commands) routing to the worker's agent name. offhook reads the caller's number
+from the SIP participant (`sip.phoneNumber` attribute, with an identity-pattern
    (`sip.phoneNumber` attribute, with an identity-pattern fallback) and offers
    it back as the callback number when taking a message — so the caller doesn't
    have to recite digits.
@@ -51,14 +64,13 @@ confirm, end to end:
 Run this once per release. The [eval harness](../README.md) proves the *brain*
 on every commit; this proves the *audio pipeline* on real telephony.
 
-## Honest limitations (v0.1)
+## Honest limitations
 
-- **Warm transfer to a human is not yet connected.** When the caller asks for a
-  person, the agent invokes `transfer_to_human`, which currently **logs the
-  reason and the transfer number** rather than bridging the call via SIP REFER.
-  Until REFER is wired, configure `transferPhone` and have the agent read the
-  number, or route through your provider. Live SIP-REFER transfer is on the
-  near roadmap.
+- **Warm transfer** is wired via SIP REFER: when the caller asks for a person,
+  `transfer_to_human` REFERs the caller's SIP leg to `transferPhone`. If the
+  REFER fails (carrier quirk, missing leg, non-phone session) it falls back to
+  the agent reading the number aloud — never dead air. REFER behaviour varies by
+  carrier; validate on a real call.
 - **Narrowband audio.** Phone calls are 8 kHz mono. offhook defaults to
   turn-taking that holds up on that, but validate on a real call — studio-audio
   assumptions don't transfer.

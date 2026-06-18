@@ -21,6 +21,8 @@ const HELP = `
     improve          learn from real calls; propose a safe edit, gated by evals
     dashboard        local web UI: call logs, transcripts, scorecard, improve
     deploy           generate a deploy wrapper (--target docker|fly|railway|render|k8s)
+    phone            provision a real number + connect it (provision|connect|status|release)
+    config           read/edit agent.yaml safely (get <path> | set <path> <value>)
 
   Options:
     -c, --config     path to agent.yaml (default: ./agent.yaml)
@@ -105,6 +107,12 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<void
       // args after 'config', minus the -c/--config flag pair
       const rest = argv.slice(1).filter((a, i, arr) => a !== '-c' && a !== '--config' && arr[i - 1] !== '-c' && arr[i - 1] !== '--config');
       configCommand(configPath, rest);
+      break;
+    }
+    case 'phone': {
+      const { phoneCommand } = await import('./phone.js');
+      const rest = argv.slice(1).filter((a, i, arr) => a !== '-c' && a !== '--config' && arr[i - 1] !== '-c' && arr[i - 1] !== '--config');
+      await phoneCommand(configPath, rest);
       break;
     }
     case 'help':

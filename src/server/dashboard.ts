@@ -27,6 +27,10 @@ import { readCallSummaries, getCallRecord, readCallRecords } from '../observabil
 import { gatePersonas } from '../evals/personas.js';
 import { runImprovePipeline } from '../improve/pipeline.js';
 import { editableValues, applyConfigEdits, type ConfigEdit } from '../config/edit.js';
+import { createTwilioClient } from '../telephony/twilio.js';
+import { liveKitSipFromEnv } from '../telephony/livekit.js';
+import { loadTelephonyState } from '../telephony/state.js';
+import { provisionNumber, connectNumber, releaseNumber } from '../telephony/orchestrate.js';
 
 export interface DashboardOptions {
   configPath: string;
@@ -172,6 +176,30 @@ export function startDashboardServer(opts: DashboardOptions): { close: () => voi
           const id = decodeURIComponent(path.slice('/api/calls/'.length));
           const rec = getCallRecord(opts.recordsPath, id);
           return rec ? json(res, 200, rec) : json(res, 404, { error: 'not found' });
+        }
+        if (req.method === 'GET' && path === '/api/phone/status') return json(res, 200, loadTelephonyState() ?? { provider: null });
+        if (req.method === 'POST' && path === '/api/phone/provision') {
+          try {
+            const body = JSON.parse((await readBody(req)) || '{}') as { areaCode?: string };
+            const livekitSipUri = process.env.LIVEKIT_SIP_URI;
+            if (!livekitSipUri) return json(res, 400, { ok: false, error: 'Set LIVEKIT_SIP_URI (your LiveKit SIP endpoint).' });
+            const config = loadAgentConfig(opts.configPath);
+            const state = await provisionNumber({ client: createTwilioClient(), livekitSipUri, agentId: config.agent.id, ...(body.areaCode ? { areaCode: body.areaCode } : {}) });
+            return json(res, 200, { ok: true, state });
+          } catch (e) { return json(res, 400, { ok: false, error: e instanceof Error ? e.message : String(e) }); }
+        }
+        if (req.method === 'POST' && path === '/api/phone/connect') {
+          try {
+            const config = loadAgentConfig(opts.configPath);
+            const state = await connectNumber({ sip: liveKitSipFromEnv(), agentId: config.agent.id, agentName: process.env.OFFHOOK_AGENT_NAME || 'offhook' });
+            return json(res, 200, { ok: true, state });
+          } catch (e) { return json(res, 400, { ok: false, error: e instanceof Error ? e.message : String(e) }); }
+        }
+        if (req.method === 'POST' && path === '/api/phone/release') {
+          try {
+            await releaseNumber({ client: createTwilioClient(), sip: liveKitSipFromEnv() });
+            return json(res, 200, { ok: true });
+          } catch (e) { return json(res, 400, { ok: false, error: e instanceof Error ? e.message : String(e) }); }
         }
         if (req.method === 'GET' && path === '/api/scorecard') return json(res, 200, getScorecard(improveDir));
         if (req.method === 'GET' && path === '/api/config') return json(res, 200, getConfigSummary(opts.configPath));

@@ -42,6 +42,7 @@ ${wordmark()}
     ${em('improve')}    learn from real calls — applied only if it passes the safety gate
     ${em('dashboard')}  local web UI: call logs, transcripts, scorecard, improve
     ${em('deploy')}     generate a deploy wrapper for any platform (fly/railway/render/k8s/docker)
+    ${em('phone')}      provision a real number + connect it to the agent (Twilio/Telnyx)
     ${em('start')}      answer real phone calls (needs LiveKit + provider keys)
     ${em('doctor')}     verify config, knowledge, and keys
 

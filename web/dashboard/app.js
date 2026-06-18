@@ -6,7 +6,7 @@ const view = document.getElementById('view');
 const nav = document.getElementById('nav');
 
 const NAV = [
-  ['calls', 'Calls'], ['scorecard', 'Scorecard'],
+  ['calls', 'Calls'], ['phone', 'Phone'], ['scorecard', 'Scorecard'],
   ['config', 'Config'], ['keys', 'Keys'], ['improve', 'Improve'],
 ];
 
@@ -138,6 +138,47 @@ async function panelKeys() {
     <div class="card"><table><thead><tr><th>Env var</th><th>Status</th><th>Purpose</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
+// ---- phone panel (provision / connect / release) ----------------------------
+
+async function panelPhone() {
+  const s = await api('/api/phone/status');
+  const provisioned = !!s.phoneNumber;
+  const connected = !!s.livekitDispatchRuleId;
+  const statusHtml = connected ? '<span class="pass">live — answering calls</span>'
+    : provisioned ? '<span class="muted">provisioned, not connected</span>'
+      : '<span class="muted">not set up</span>';
+  view.innerHTML = `<h1>Phone</h1>
+    <div class="card"><div class="kv">
+      <div class="k">Number</div><div>${provisioned ? esc(s.phoneNumber) : '<span class="muted">none yet</span>'}</div>
+      <div class="k">Provider</div><div>${esc(s.provider || '—')}</div>
+      <div class="k">Status</div><div>${statusHtml}</div>
+    </div></div>
+    <div class="card">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <input id="ph-area" placeholder="area code (optional)" style="${CFG_INPUT_STYLE};width:160px">
+        <button class="primary" id="ph-provision">Provision a number</button>
+        <button class="ghost" id="ph-connect">Connect (go live)</button>
+        <button class="ghost" id="ph-release">Release</button>
+      </div>
+      <div id="ph-status" class="muted" style="margin-top:10px"></div>
+    </div>
+    <div class="card muted" style="font-size:12px">Provision buys a real number via Twilio (needs TWILIO_ACCOUNT_SID + TWILIO_AUTH_TOKEN + LIVEKIT_SIP_URI). Connect creates the LiveKit trunk + dispatch. Then run the worker: <code>offhook start</code>.</div>`;
+  const st = document.getElementById('ph-status');
+  const act = async (path, body) => {
+    st.textContent = 'working…'; st.className = 'muted';
+    try {
+      const r = await fetch(path, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+      const j = await r.json();
+      st.textContent = j.ok ? '✓ done' : `✗ ${j.error}`;
+      st.className = j.ok ? 'pass' : 'block';
+      if (j.ok) setTimeout(panelPhone, 700);
+    } catch (e) { st.textContent = `✗ ${e.message}`; st.className = 'block'; }
+  };
+  document.getElementById('ph-provision').onclick = () => act('/api/phone/provision', { areaCode: document.getElementById('ph-area').value || undefined });
+  document.getElementById('ph-connect').onclick = () => act('/api/phone/connect');
+  document.getElementById('ph-release').onclick = () => { if (confirm('Release the number + trunks? This is irreversible.')) act('/api/phone/release'); };
+}
+
 // ---- improve panel (POST + SSE stream) --------------------------------------
 
 let improving = false;
@@ -212,6 +253,7 @@ async function route() {
   view.innerHTML = '<div class="empty">Loading…</div>';
   try {
     if (page === 'call' && arg) return await panelCall(arg);
+    if (page === 'phone') return await panelPhone();
     if (page === 'scorecard') return await panelScorecard();
     if (page === 'config') return await panelConfig();
     if (page === 'keys') return await panelKeys();
