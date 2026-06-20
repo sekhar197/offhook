@@ -1,10 +1,10 @@
 # offhook
 
-> **A production-grade AI voice agent that answers real phone calls — on your own infrastructure, with your own provider, ready in minutes.**
+> **Building a voice agent is easy. Making it safe and reliable on real calls is the hard part — offhook is the open-source voice agent that tests itself with adversarial callers and improves itself, and provably won't regress its own safety.**
 
-Bring your keys, point a phone number at it, and offhook answers calls with a real, tool-using agent: it searches your knowledge, takes messages that actually get delivered, transfers to a human, and won't say things it shouldn't. One config file. Any LLM (hosted or fully local). Twilio **or** Telnyx, a new number **or** the one you already own. Self-hosted on your laptop, a VPS, or any cloud — no SaaS in the call path, your data never leaves your box.
+A weekend gets you a voice agent that *talks*. What it doesn't get you is the hard part: knowing it won't invent a price, leak its system prompt, fumble a chest-pain caller, or quietly get worse every time you tweak it. **offhook is the open, self-hostable voice agent built around that hard part** — production-hardened tool-calling, an adversarial eval suite in the repo, and a self-improvement loop that's *gated* so a self-edit can never weaken its own safety.
 
-It's not a demo. It's extracted from a voice agent that's been answering real phone calls in production since 2025 — and it ships the things that turn a demo into something you can actually put a phone number on: an adversarial safety eval suite, structured call records, idempotent delivery, and a safety-gated loop that learns from real calls **without ever regressing its own safety**.
+Point it at whatever you're building — a receptionist, call-screening, a support line, your own experiment. Any LLM (hosted or fully local), swappable STT/TTS, your own infra. It answers real phone calls (Twilio/Telnyx) too — but the reason to reach for it isn't that it talks (lots of things talk). It's that it **tests and improves itself**, so you ship the hard part on day one.
 
 <!-- TODO(launch): replace with the 90s demo cast — see docs/launch/demo-storyboard.md -->
 
@@ -16,7 +16,7 @@ It's not a demo. It's extracted from a voice agent that's been answering real ph
   ╚██████╔╝██║     ██║     ██║  ██║╚██████╔╝╚██████╔╝██║  ██╗
    ╚═════╝ ╚═╝     ╚═╝     ╚═╝  ╚═╝ ╚═════╝  ╚═════╝ ╚═╝  ╚═╝
 
-  a production-grade voice agent · your infra · your provider · ready in minutes
+  the open voice agent that tests itself · improves itself · won't break its own safety
 ```
 
 ## From zero to a number that answers
@@ -43,14 +43,14 @@ That's the whole path: **install → init → chat → connect a number → answ
 
 offhook runs on [LiveKit](https://github.com/livekit/agents) for media transport — the same way a web app runs on a web server. **LiveKit is the engine; offhook is the agent.** What you'd otherwise build by hand on top of that engine, and what offhook gives you in one config file:
 
-| You need | A starter template gives you | offhook gives you |
+| The hard part | A starter template gives you | offhook gives you |
 |---|---|---|
-| **An agent that doesn't go off the rails** | a prompt | phase-gated tools (no regex intent classification), an ASR-correction layer with negation safety, hybrid BM25 + embedding knowledge search, and every tool message linted for technical leakage before it reaches the caller |
 | **Proof it's safe before you ship** | nothing | an open adversarial eval suite — 38 caller personas incl. chest-pain→**911**, gas-smell→**evacuate**, prompt-injection, and system-exfil probes, plus a deterministic leak-corpus that runs key-free in CI. `npm run verify:safety` / `npm test` |
+| **An agent that gets better without getting worse** | grep logs | `offhook improve` learns from your real calls and proposes a fix — applied **only if it passes the full safety eval.** Autonomous, but it can't regress its own safety. |
+| **An agent that doesn't go off the rails** | a prompt | phase-gated tools (no regex intent classification), an ASR-correction layer with negation safety, hybrid BM25 + embedding knowledge search, and every tool message linted for technical leakage before it reaches the caller |
 | **A real phone number** | wire SIP by hand | `offhook phone` — Twilio **or** Telnyx, new **or** bring-your-own number, provisioned + connected for you |
 | **Actions that actually happen** | a webhook stub | `take_message` that really texts/emails the owner (Twilio/Resend, BYO key), idempotent so a retry never double-sends |
 | **To run it anywhere** | a Dockerfile, maybe | `offhook deploy --target fly\|railway\|render\|k8s\|docker` from one tested image — or fully local/air-gapped |
-| **To see + improve it** | grep logs | a local dashboard (call logs, transcripts, scorecard) + `offhook improve` — learns from real calls, applies a fix **only if it passes the safety gate** |
 
 You could assemble most of this yourself. offhook is the opinionated, tested, production-hardened version so you don't have to — and so you can read the source and trust what it does.
 
