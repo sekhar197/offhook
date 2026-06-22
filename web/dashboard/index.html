@@ -26,9 +26,13 @@
     body::before {
       content:''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
       background:
-        radial-gradient(900px 500px at 88% -8%, rgba(255,120,60,.13), transparent 60%),
-        radial-gradient(700px 500px at -6% 8%, rgba(120,90,255,.08), transparent 55%);
+        radial-gradient(820px 460px at 90% -10%, rgba(255,120,60,.15), transparent 60%),
+        radial-gradient(680px 480px at -8% 6%, rgba(120,90,255,.09), transparent 55%),
+        linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px) 0 0 / 46px 46px,
+        linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px) 0 0 / 46px 46px;
     }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+    :focus-visible { outline: 2px solid var(--ember-2); outline-offset: 2px; border-radius: 6px; }
     a { color: var(--ember-2); text-decoration: none; }
     ::selection { background: rgba(255,120,60,.28); }
     ::-webkit-scrollbar { width: 10px; height: 10px; } ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 8px; }
@@ -73,8 +77,8 @@
       background:rgba(255,120,60,.13); border:1px solid rgba(255,120,60,.24); color:var(--ember-2); }
     .metric .ico svg{ width:16px; height:16px; }
     .metric .label{ color:var(--faint); font-size:11px; text-transform:uppercase; letter-spacing:.07em; }
-    .metric .val{ font-family:var(--mono); font-size:27px; font-weight:500; margin-top:5px; letter-spacing:-.02em; }
-    .metric .val.ok{ color:var(--ok); } .metric .val.warn{ color:var(--warn); }
+    .metric .val{ font-family:var(--mono); font-size:27px; font-weight:500; margin-top:5px; letter-spacing:-.02em; text-shadow:0 0 22px rgba(255,255,255,.10); }
+    .metric .val.ok{ color:var(--ok); text-shadow:0 0 22px rgba(70,211,154,.28); } .metric .val.warn{ color:var(--warn); }
     .ctitle { color:var(--faint); font-size:11px; text-transform:uppercase; letter-spacing:.07em; margin-bottom:14px; }
     .chart { display:flex; align-items:flex-end; gap:8px; height:108px; }
     .chart .b { flex:1; background:linear-gradient(180deg, var(--ember-2), var(--ember)); border-radius:5px 5px 3px 3px;
